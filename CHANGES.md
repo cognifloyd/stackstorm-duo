@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+
+- Converted `duo.auth_chatops` and `duo.auth_wrap_demo` workflows to Orquesta
+  Contributed by Nick Maludy (Encore Technologies)
+
 ## 0.4.0
 
 - Added: Support for Python3
