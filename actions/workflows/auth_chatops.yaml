@@ -1,44 +1,42 @@
 ---
-version: '2.0'
-duo.auth_chatops:
-  description: "Only send an announcement if successfully auth'ed with Duo"
+version: '1.0'
+description: Only send an announcement if successfully auth'ed with Duo
 
-  input:
-    - uuid
-    - user
-    - channel
-    - hint
+input:
+  - uuid
+  - user
+  - channel
+  - hint
 
-  output:
-    auth: <% $.auth %>
-    message: <% $.message %>
+output:
+  - auth: "{{ ctx().auth }}"
+  - message: "{{ ctx().message }}"
 
-  tasks:
-    duo_auth:
-      # [235, 26]
-      action: duo.auth_auth
+tasks:
+  duo_auth:
+    action: duo.auth_auth
+    input:
+      username: "{{ ctx().user }}"
+      pushinfo:
+        Source: ChatOps
+        Action: "{{ ctx().hint }}"
+    next:
+      - when: '{{ succeeded() }}'
+        do:
+          - announce_success
+      - when: '{{ failed() }}'
+        do:
+          - post_failure
 
-      input:
-        username: <% $.user %>
-        pushinfo: {"Source": "ChatOps", "Action": "<% $.hint %>"}
+  announce_success:
+    action: duo.announce_success
+    input:
+      uuid: "{{ ctx().uuid }}"
 
-      on-success:
-        - announce_success
-
-      on-error:
-        - post_failure
-
-    announce_success:
-      # [105, 128]
-      action: duo.announce_success
-      input:
-        uuid: <% $.uuid %>
-
-    post_failure:
-      # [365, 128]
-      action: chatops.post_message
-      input:
-        channel: <% $.channel %>
-        whisper: false
-        message: "*auth failure:* two-factor auth attempt failed.{~}"
-        user: <% $.user %>
+  post_failure:
+    action: chatops.post_message
+    input:
+      channel: "{{ ctx().channel }}"
+      whisper: false
+      message: '*auth failure:* two-factor auth attempt failed.{~}'
+      user: "{{ ctx().user }}"
